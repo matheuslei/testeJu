@@ -1,6 +1,5 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const exceljs = require("exceljs");
 const fs = require("fs");
 const moment = require("moment");
 const app = express();
@@ -63,86 +62,49 @@ app.post("/submit", (req, res) => {
     puxacracha: { name: "Puxa-Crachá", price: 2.5 },
   };
 
-  const filePath = "data.xlsx";
-  const exists = fs.existsSync(filePath);
-
   const upperCaseName = data.name.toUpperCase();
-  const formattedDate = moment().format(" DD/MM/YYYY - HH:mm:ss");
+  const formattedDate = moment().format("DD/MM/YYYY - HH:mm:ss");
 
-  if (exists) {
-    const workbook = new exceljs.Workbook();
-    workbook.xlsx
-      .readFile(filePath)
-      .then(() => {
-        const worksheet = workbook.getWorksheet("Dados");
-        Object.keys(productsInfo).forEach((productKey) => {
-          const productInfo = productsInfo[productKey];
-          const productName = productInfo.name;
-          const productPrice = productInfo.price;
-          const productQuantity = data[productKey + "Quantity"];
-          if (productQuantity > 0) {
-            const totalAmount = productPrice * productQuantity;
-            worksheet.addRow([
-              upperCaseName,
-              productName,
-              productQuantity,
-              totalAmount,
-              formattedDate,
-            ]);
-          }
-        });
-        return workbook.xlsx.writeFile(filePath);
-      })
-      .then(() => {
-        console.log("Dados adicionados ao arquivo existente:", filePath);
-        res.json({ success: true, message: "Dados adicionados com sucesso." });
-      })
-      .catch((error) => {
-        console.error("Erro ao adicionar dados ao arquivo:", error);
-        res
-          .status(500)
-          .json({ success: false, message: "Erro ao adicionar os dados." });
-      });
-  } else {
-    const workbook = new exceljs.Workbook();
-    const worksheet = workbook.addWorksheet("Dados");
-    worksheet.addRow([
-      "Nome",
-      "Produto",
-      "Quantidade",
-      "Valor Total",
-      "Data e Hora",
-    ]);
+  const filePath = "data.json";
+
+  fs.readFile(filePath, (err, fileData) => {
+    let jsonData = [];
+
+    if (!err) {
+      jsonData = JSON.parse(fileData);
+    }
+
     Object.keys(productsInfo).forEach((productKey) => {
       const productInfo = productsInfo[productKey];
       const productName = productInfo.name;
       const productPrice = productInfo.price;
       const productQuantity = data[productKey + "Quantity"];
+
       if (productQuantity > 0) {
         const totalAmount = productPrice * productQuantity;
-        worksheet.addRow([
-          upperCaseName,
-          productName,
-          productQuantity,
-          totalAmount,
-          formattedDate,
-        ]);
+
+        jsonData.push({
+          Nome: upperCaseName,
+          Produto: productName,
+          Quantidade: productQuantity,
+          "Valor Total": totalAmount,
+          "Data e Hora": formattedDate,
+        });
       }
     });
 
-    workbook.xlsx
-      .writeFile(filePath)
-      .then(() => {
-        console.log("Novo arquivo Excel criado com os dados:", filePath);
-        res.json({ success: true, message: "Dados salvos com sucesso." });
-      })
-      .catch((error) => {
-        console.error("Erro ao salvar o novo arquivo:", error);
+    fs.writeFile(filePath, JSON.stringify(jsonData, null, 2), (err) => {
+      if (err) {
+        console.error("Erro ao salvar os dados em JSON:", err);
         res
           .status(500)
           .json({ success: false, message: "Erro ao salvar os dados." });
-      });
-  }
+      } else {
+        console.log("Dados salvos em JSON:", filePath);
+        res.json({ success: true, message: "Dados salvos com sucesso." });
+      }
+    });
+  });
 });
 
 app.listen(port, () => {
