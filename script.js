@@ -144,9 +144,10 @@ function sendData() {
     data[product + "Quantity"] = quantity;
   }
 
-  fetch("/submit", {
+  fetch("/https://api.sheetmonkey.io/form/xuCL3Q9ZZdMQkGoVp6fXWu", {
     method: "POST",
     headers: {
+      Accept: "application/json",
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
@@ -194,4 +195,4 @@ function decrementaValor(valorMinimo, id) {
   }
   document.getElementById(id).value = value;
 }
-console.log("Teste");
+console.log("Executando...");
